@@ -1,0 +1,35 @@
+import { AudioPort } from "../ports/AudioPort";
+import { BaseNode } from "../lib/BaseNode";
+import MemoryProcessor from "../worklet/MemoryProcessor";
+import { Number } from "../lib/Number";
+import { SignalNode } from "../lib/signalNode";
+import { dispose } from "$library/dispose";
+import { group, icon } from "../_groups";
+import { MemoryStick } from "lucide-react";
+import { name } from "$library/function";
+import { store } from "$components/node-editor";
+
+@name('Memory')
+@group('math')
+@icon(MemoryStick)
+export default class extends BaseNode {
+  #processor = new MemoryProcessor();
+
+  @store _value = new SignalNode(this.#processor.value);
+  @store _write = new SignalNode(this.#processor.write);
+
+  _connect = () => dispose(
+    () => this.#processor.destroy()
+  );
+
+  output = (
+    <AudioPort value={this.#processor} output />
+  );
+
+  _view = () => (
+    <>
+      <Number label={`Value`} value={this._value} />
+      <Number label={`Write`} value={this._write} />
+    </>
+  );
+}

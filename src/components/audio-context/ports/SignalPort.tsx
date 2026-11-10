@@ -1,0 +1,48 @@
+import { reactive } from "@vicimpa/decorators";
+
+import { AudioPort } from "./AudioPort";
+import { BasePort } from "../lib/BasePort";
+import { SignalNode } from "../lib/signalNode";
+import { connect } from "@vicimpa/react-decorators";
+import { start } from "../lib/start";
+
+@connect(ctx => start(ctx.value))
+@reactive()
+export class SignalPort extends BasePort {
+  kind = 'signal';
+  value: SignalNode = this.props.value;
+
+  _onConnect(port: AudioPort | SignalPort) {
+    if (!this.value) return false;
+    if (!port.value) return false;
+    if (!this.props.output) return true;
+
+    if (port.value instanceof AudioNode) {
+      this.value.node.connect(port.value);
+      return true;
+    }
+
+    if (port.value instanceof SignalNode) {
+      this.value.node.connect(port.value.node.offset);
+      port.value.addInput(this.value);
+      return true;
+    }
+
+    return false;
+  }
+
+  _onDisconnect(port: AudioPort | SignalPort) {
+    if (!this.props.output) return true;
+
+    if (port.value instanceof AudioNode) {
+      this.value.node.disconnect(port.value);
+    }
+
+    if (port.value instanceof SignalNode) {
+      port.value.deleteInput(this.value);
+      try {
+        this.value.node.disconnect(port.value.node.offset);
+      } catch (e) { }
+    }
+  }
+}

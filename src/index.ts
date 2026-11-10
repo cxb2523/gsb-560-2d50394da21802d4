@@ -1,0 +1,26 @@
+import "@fontsource/inter/800.css";
+import "@fontsource/fira-sans-condensed/400.css";
+import "@fontsource/fira-sans-condensed/500.css";
+
+import { App } from "$App";
+import { createElement } from "react";
+import { createRoot } from "react-dom/client";
+import { dom } from "$library/dom";
+
+createRoot(
+  dom('div', {
+    style: {
+      display: 'contents',
+      border: 'none'
+    },
+    ref(elem) {
+      document.body.appendChild(elem);
+    }
+  })
+).render(
+  createElement(App)
+);
+
+document.addEventListener("dragover", function (event) {
+  event.preventDefault();
+}, false);

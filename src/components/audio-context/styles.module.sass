@@ -1,0 +1,529 @@
+// Нода
+.node
+  --accent: #a0a0a0
+  --accent-soft: color-mix(in srgb, var(--accent) 11%, transparent)
+  --accent-text: color-mix(in srgb, var(--accent) 75%, #fff)
+  position: relative
+  display: flex
+  flex-direction: column
+  min-width: 170px
+  background-color: var(--bg-node)
+  border-radius: var(--radius-node)
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35), 0 0 0 1px rgba(255, 255, 255, .04)
+  font-size: 12px
+
+  &[data-select]
+    box-shadow: 0 6px 20px rgba(0, 0, 0, .35), 0 0 0 1.5px var(--accent)
+
+  header
+    display: flex
+    align-items: center
+    gap: 6px
+    height: 30px
+    padding: 0 var(--pad)
+    color: var(--accent)
+
+    [data-drag]
+      display: flex
+      align-items: center
+      flex-grow: 1
+      gap: 6px
+      height: 100%
+
+    svg
+      flex-shrink: 0
+
+  main
+    display: flex
+    flex-direction: column
+    gap: 3px
+    padding: 0 var(--pad) var(--pad)
+
+  article
+    display: flex
+    flex-direction: column
+    gap: 3px
+
+    canvas
+      display: block
+      align-self: center
+      max-width: 100%
+      background-color: var(--bg-field)
+      border-radius: var(--radius-field)
+
+.title
+  flex-grow: 1
+  text-align: right
+  font-family: var(--font-title)
+  font-weight: 800
+  font-size: 12px
+  letter-spacing: .03em
+  text-transform: uppercase
+  white-space: nowrap
+
+.delete
+  display: grid
+  place-items: center
+  width: 18px
+  height: 18px
+  padding: 0
+  border: none
+  background: none
+  color: var(--text-muted)
+  opacity: 0
+
+  .node:hover &
+    opacity: 1
+
+  &:not(:disabled):hover
+    background: none
+    color: var(--danger)
+
+// Порты основной обработки: сначала входы, потом выходы
+.io
+  display: flex
+  flex-direction: column
+  gap: 3px
+
+  & > div
+    display: flex
+    flex-direction: column
+    gap: 3px
+
+    &:empty
+      display: none
+
+// Строка: [порт] подпись | контрол. Строка с портом подкрашена и доходит до краёв ноды.
+.row
+  position: relative
+  display: grid
+  grid-template-columns: minmax(48px, max-content) minmax(min-content, 1fr)
+  align-items: center
+  gap: 4px
+  min-height: var(--row)
+
+  & > label
+    padding: 0 4px
+    text-align: right
+    color: var(--text-muted)
+    white-space: nowrap
+    overflow: hidden
+    text-overflow: ellipsis
+
+  &[data-port]
+    margin: 0 calc(-1 * var(--pad))
+    padding: 0 var(--pad)
+    background-color: var(--accent-soft)
+
+    & > label
+      color: var(--accent-text)
+
+  &[data-linked] .field
+    color: var(--accent-text)
+
+.field
+  display: flex
+  align-items: center
+  gap: 4px
+  min-width: 0
+  height: calc(var(--row) - 2px)
+  padding: 0 6px
+  background-color: var(--bg-field)
+  border-radius: var(--radius-field)
+  color: var(--text)
+
+  small
+    flex-shrink: 0
+    color: var(--text-muted)
+    font-size: 10px
+
+  .dropdown
+    margin: 0 -6px
+    background: none
+
+    &:not(:last-child)
+      margin-right: 0
+
+.dropdown
+  position: relative
+  flex-grow: 1
+  min-width: 0
+  height: 100%
+  border-radius: var(--radius-field)
+  background-color: var(--bg-field)
+
+  // Длинный пункт (имя файла, устройства) не растягивает ноду, а обрезается многоточием
+  &[data-shrink]
+    width: 0
+
+.select
+  display: flex
+  align-items: center
+  gap: 4px
+  width: 100%
+  height: 100%
+  padding: 0 6px
+  border: none
+  background: none
+  color: inherit
+  text-align: left
+
+  span
+    flex-grow: 1
+    min-width: 0
+    overflow: hidden
+    text-overflow: ellipsis
+    white-space: nowrap
+
+  svg
+    flex-shrink: 0
+    transition: transform .15s
+
+  .dropdown[data-open] & svg
+    transform: rotate(180deg)
+
+.options
+  position: absolute
+  top: calc(100% + 3px)
+  left: 0
+  z-index: 10
+  width: max-content
+  min-width: 100%
+  max-width: min(320px, 80vw)
+  max-height: 240px
+  padding: 3px
+  overflow-y: auto
+  overscroll-behavior: contain
+  border: 1px solid var(--line)
+  border-radius: var(--radius-field)
+  background-color: var(--bg-panel)
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .45)
+  color: var(--text)
+
+  &[data-up]
+    top: auto
+    bottom: calc(100% + 3px)
+
+.option
+  padding: 4px 6px
+  overflow: hidden
+  border-radius: 3px
+  text-overflow: ellipsis
+  white-space: nowrap
+  cursor: pointer
+
+  &[data-active]
+    background-color: var(--bg-hover)
+
+  &[data-selected]
+    color: var(--accent-text)
+
+.optionGroup
+  padding: 5px 6px 3px
+  color: var(--text-muted)
+  font-family: var(--font-title)
+  font-size: 9px
+  font-weight: 800
+  letter-spacing: .04em
+  text-transform: uppercase
+
+.number
+  flex-grow: 1
+  width: 0
+  min-width: 36px
+  height: 100%
+  padding: 0
+  border: none !important
+  background: none !important
+  text-align: right
+  user-select: text
+
+  &:disabled
+    color: inherit
+
+.slider + .number
+  flex: 0 0 44px
+
+.slider
+  flex-grow: 1
+  min-width: 40px
+  height: 14px
+  appearance: none
+  background: none
+  cursor: pointer
+
+  &::-webkit-slider-runnable-track
+    height: 3px
+    border-radius: 2px
+    background: linear-gradient(var(--accent), var(--accent)) 0 / var(--fill, 0%) 100% no-repeat, #3a3a3a
+
+  &::-webkit-slider-thumb
+    appearance: none
+    width: 11px
+    height: 11px
+    margin-top: -4px
+    border-radius: 50%
+    background-color: var(--bg-field)
+    box-shadow: inset 0 0 0 2.5px var(--accent)
+
+  &:disabled
+    cursor: default
+    opacity: .6
+
+.toggle
+  position: relative
+  height: calc(var(--row) - 2px)
+  padding: 0 22px
+  border: none
+  border-radius: 999px
+  background-color: var(--bg-field)
+  color: var(--text-muted)
+  font-size: 10px
+  letter-spacing: .06em
+
+  &::before
+    content: ''
+    position: absolute
+    top: 50%
+    left: 4px
+    width: 11px
+    height: 11px
+    border-radius: 50%
+    transform: translateY(-50%)
+    box-shadow: inset 0 0 0 2.5px var(--text-muted)
+
+  &[data-on]
+    color: var(--accent-text)
+
+    &::before
+      left: calc(100% - 15px)
+      background-color: var(--accent)
+      box-shadow: inset 0 0 0 2.5px var(--accent)
+
+  &:not(:disabled):hover
+    background-color: var(--bg-hover)
+
+// Поле формулы (Expression)
+.expression
+  display: block
+  width: 100%
+  min-width: 220px
+  min-height: calc(var(--row) * 2)
+  margin-top: 3px
+  padding: 4px 6px
+  resize: vertical
+  font-family: ui-monospace, Menlo, Consolas, monospace
+  font-size: 11px
+  line-height: 1.4
+  word-break: break-all
+
+  &::placeholder
+    color: var(--text-muted)
+
+  &[data-invalid]:not(:focus)
+    border-color: var(--danger)
+
+.expressionError
+  padding: 0 2px
+  color: var(--danger)
+  font-size: 11px
+  white-space: pre-wrap
+  overflow-wrap: anywhere
+
+// Порт ноды (обёртка BasePort)
+.port
+  position: relative
+  display: flex
+  align-items: center
+  height: var(--row)
+  margin: 0 calc(-1 * var(--pad))
+  padding: 0 var(--pad)
+  background-color: var(--accent-soft)
+  color: var(--accent-text)
+  font-size: 11px
+  white-space: nowrap
+
+  & > :first-child
+    position: absolute
+    left: calc(-1 * var(--port) - 6px)
+
+  &[data-output]
+    justify-content: flex-end
+
+    & > :first-child
+      left: auto
+      right: calc(-1 * var(--port) - 6px)
+
+  &[data-bare]
+    display: contents
+
+// Обычные таблицы внутри нод (Keyboard, Drums)
+.table
+  width: 100%
+  border-spacing: 0 3px
+
+  td
+    padding: 0 2px
+    white-space: nowrap
+
+.active
+  color: var(--accent-text)
+
+// Подзаголовок группы строк внутри ноды
+.caption
+  margin-top: 6px
+  padding: 0 4px
+  color: var(--text-muted)
+  font-family: var(--font-title)
+  font-weight: 800
+  font-size: 10px
+  letter-spacing: .06em
+  text-transform: uppercase
+
+// Пояснение внутри ноды (например, нет доступа к MIDI)
+.message
+  display: flex
+  align-items: center
+  justify-content: space-between
+  gap: 6px
+  max-width: 220px
+  padding: 4px 6px
+  background-color: var(--bg-field)
+  border-radius: var(--radius-field)
+  color: var(--text-muted)
+  font-size: 11px
+
+  &[data-error]
+    color: var(--danger)
+
+  button
+    flex-shrink: 0
+
+// Редактор блока: полноэкранный слой справа от меню
+.blockEditor
+  position: fixed
+  top: 0
+  right: 0
+  bottom: 0
+  left: 200px
+  z-index: 20
+  display: none
+  background-color: var(--bg-canvas)
+  box-shadow: -10px 0 30px rgba(0, 0, 0, .4)
+
+  &[data-open]
+    display: block
+
+.blockBar
+  position: absolute
+  top: 10px
+  left: 10px
+  z-index: 1
+  display: flex
+  align-items: center
+  gap: 4px
+  height: 36px
+  padding: 0 6px 0 10px
+  border-radius: var(--radius-node)
+  background-color: var(--bg-panel)
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .35), 0 0 0 1px var(--line)
+  color: var(--text-muted)
+
+  button
+    display: flex
+    align-items: center
+    gap: 6px
+    height: 26px
+    border: none
+    background: none
+    color: inherit
+
+    &:last-child
+      color: var(--text)
+
+  b
+    color: var(--text)
+    font-family: var(--font-title)
+    font-weight: 800
+    font-size: 12px
+    text-transform: uppercase
+    letter-spacing: .03em
+
+.blockOpen
+  display: flex
+  align-items: center
+  justify-content: center
+  gap: 6px
+  height: var(--row)
+  color: var(--accent-text)
+
+// Dashboard
+.dash
+  display: flex
+  flex-direction: column
+  gap: 6px
+  min-width: 200px
+
+.dashWidget
+  display: flex
+  flex-direction: column
+  gap: 3px
+
+.dashNumber
+  padding: 6px 10px
+  border-radius: var(--radius-field)
+  background: var(--bg-field)
+  color: var(--accent)
+  font-size: 28px
+  text-align: right
+  white-space: nowrap
+  overflow: hidden
+  text-overflow: ellipsis
+
+.dashBar
+  position: relative
+  height: 22px
+  border-radius: var(--radius-field)
+  background: var(--bg-field)
+  overflow: hidden
+
+  span
+    position: absolute
+    inset: 0 6px
+    display: flex
+    align-items: center
+    justify-content: flex-end
+    color: var(--text)
+    font-size: 11px
+
+.dashBarFill
+  height: 100%
+  background: var(--accent-soft)
+  border-right: 2px solid var(--accent)
+
+  &[data-red]
+    background: color-mix(in srgb, var(--danger) 30%, transparent)
+    border-color: var(--danger)
+
+.dashLamp
+  width: 18px
+  height: 18px
+  margin: 2px auto
+  border-radius: 50%
+  background: var(--bg-field)
+
+  &[data-on]
+    background: var(--accent)
+    box-shadow: 0 0 10px var(--accent)
+
+.dashEditor
+  display: flex
+  flex-direction: column
+  gap: 2px
+  padding: 4px 0 6px
+  border-bottom: 1px solid var(--bg-field)
+
+.dashButtons
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 4px

@@ -1,0 +1,137 @@
+import { Signal, effect } from "@preact/signals-react";
+import { prop, reactive } from "@vicimpa/decorators";
+
+import { ctx } from "../ctx";
+import { dispose } from "$library/dispose";
+import { frames } from "$library/frames";
+import { pipe } from "./pipe";
+import { RefValue } from "./refValue";
+
+const value = (v: number | AudioParam | RefValue) => (
+  typeof v === 'number' ? v : v.value
+);
+
+export type SignalNodeParams = {
+  min?: number;
+  max?: number;
+  default?: number;
+  signalOnly?: boolean;
+};
+
+@reactive()
+export class SignalNode extends Signal<number> {
+  node = new ConstantSourceNode(ctx);
+  refValue?: RefValue;
+  param?: AudioParam;
+
+  #analyze = new AnalyserNode(ctx);
+  #analyzeData = new Float32Array(this.#analyze.frequencyBinCount);
+
+  min: number;
+  max: number;
+  default: number;
+
+  signalOnly = false;
+
+  @prop
+  private _input: (SignalNode | AudioNode)[] = [];
+
+  get connected() {
+    return this._input.length > 0;
+  };
+
+  addInput(_input: SignalNode | AudioNode) {
+    const index = this._input.indexOf(_input);
+    if (index !== -1) return;
+    this._input = [...this._input, _input];
+  }
+
+  deleteInput(_input: SignalNode | AudioNode) {
+    const index = this._input.indexOf(_input);
+    if (index === -1) return;
+    this._input = this._input.toSpliced(index, 1);
+  }
+
+  start() {
+    var wasConnected = false;
+
+    return dispose(
+      this.param && !this.signalOnly ? dispose(
+        pipe(this.node, this.param),
+        (
+          this.param.value = 0,
+          () => {
+            this.param!.value = this.default;
+          }
+        )
+      ) : undefined,
+      effect(() => {
+        if (this.connected) {
+          this.node.offset.value = 0;
+          wasConnected = true;
+          return;
+        }
+
+        // К значению по умолчанию возвращаемся, только когда провод сняли.
+        // При запуске порта значение не трогаем: его могли только что восстановить из проекта
+        // (входы c–e у Math появляются уже после загрузки настроек).
+        if (wasConnected)
+          this.value = this.default;
+
+        wasConnected = false;
+      }),
+      effect(() => {
+        if (!this.refValue)
+          return;
+
+        this.refValue.value = this.value;
+      }),
+      effect(() => {
+        if (this.connected)
+          return;
+
+        if (this.signalOnly && this.param) {
+          this.param.value = this.value;
+        }
+
+        this.node.offset.value = this.value;
+      }),
+      effect(() => {
+        if (!this.connected)
+          return;
+
+        return dispose(
+          pipe(this.node, this.#analyze),
+          frames(() => {
+            this.#analyze.getFloatTimeDomainData(this.#analyzeData);
+            if (this.value !== this.#analyzeData[0])
+              this.value = this.#analyzeData[0];
+          })
+        );
+      })
+    );
+  }
+
+  constructor(param: number | AudioParam | RefValue, params?: SignalNodeParams) {
+    super(value(param));
+    this.node.start();
+    this.#analyze.fftSize = 32;
+    this.signalOnly = params?.signalOnly ?? false;
+
+    if (param instanceof AudioParam) {
+      this.param = param;
+      this.min = params?.min ?? param.minValue;
+      this.max = params?.max ?? param.maxValue;
+      this.default = params?.default ?? param.defaultValue;
+    } else if (param instanceof RefValue) {
+      this.refValue = param;
+      this.min = params?.min ?? param.minValue;
+      this.max = params?.max ?? param.maxValue;
+      this.default = params?.default ?? param.defaultValue;
+    } else {
+      this.min = params?.min ?? this.node.offset.minValue;
+      this.max = params?.max ?? this.node.offset.maxValue;
+      this.default = params?.default ?? this.node.offset.defaultValue;
+    }
+  }
+}
