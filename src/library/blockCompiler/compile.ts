@@ -15,6 +15,17 @@ export type TGraph = {
 // Живой параметр: SignalNode `key` ноды `node` подаётся в параметр процессора `k<index>`
 export type TParam = { node: number; key: string; };
 
+// Вход без провода: молчит (ключ null) или читает живой параметр.
+// Только структура графа и таблица шаблонов: в сгенерированный код ничего отсюда не идёт.
+export type TUnwiredInput = {
+  // Индекс ноды в graph.nodes
+  node: number;
+  // Номер входного порта ноды
+  input: number;
+  // Тип ноды (уже проверен по таблице шаблонов)
+  type: string;
+};
+
 export type TCompiled = {
   ok: true;
   // JS-выражение: фабрика (sr) => (ins, outs, ps, n, frame) => void
@@ -23,6 +34,8 @@ export type TCompiled = {
   inputs: string[];
   outputs: string[];
   params: TParam[];
+  // Входы без провода среди скомпилированных нод (пустой список, если таких нет)
+  unwiredInputs: TUnwiredInput[];
   // Вход, соединённый прямо с выходом: идёт мимо процессора, сохраняя стерео
   passthrough: [input: string, output: string][];
   // Ноды, которые читают прошлый сэмпл другой ноды (разрыв петли)
@@ -181,6 +194,7 @@ export const compileBlock = (graph: TGraph): TCompileResult => {
   const features = new Set<TFeature>();
   const state: string[] = [];
   const params: TParam[] = [];
+  const unwiredInputs: TUnwiredInput[] = [];
   const body: string[] = [];
 
   const value = (wire: TWire) => wire.delayed ? `s.d${wire.from}` : `v${wire.from}`;
@@ -195,6 +209,9 @@ export const compileBlock = (graph: TGraph): TCompileResult => {
       return `F(${list.map(value).join(' + ')})`;
 
     const key = ports[node].inputs[index];
+
+    // Вход без провода: запоминаем в диагностику до того, как он станет параметром или нулём
+    unwiredInputs.push({ node, input: index, type: nodes[node] });
 
     if (key === null)
       return '0';
@@ -294,6 +311,7 @@ export const compileBlock = (graph: TGraph): TCompileResult => {
     inputs,
     outputs,
     params,
+    unwiredInputs,
     passthrough,
     delayed: [...delayed],
   };
